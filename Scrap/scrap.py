@@ -8,12 +8,6 @@ import re
 from googletrans import Translator
 
 
-def isEnglish(s):
-    return re.search('[a-zA-Z]', s)
-
-def hasNumbers(inputString):
-    return any(char.isdigit() for char in inputString)
-
 def translate_to_sinhala(value):
     sinhala_val = value
     if(len(value)>0):
@@ -110,10 +104,13 @@ def get_all_data(position,url,name_cell,start_cell,end_cell,party_cell,max):
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'lxml')
 
-    politician = []
+    female_list = ["Sirimavo","Chandrika","Siva","Vimala","Renuka"]
+
+    politician_english = []
     politician_sinhala = []
-    tables = soup.find_all('table',class_="wikitable")
-    
+    politician_meta_data = []
+
+    tables = soup.find_all('table',class_="wikitable") 
 
     for table in tables:
         rows = table.find_all('tr')
@@ -122,47 +119,89 @@ def get_all_data(position,url,name_cell,start_cell,end_cell,party_cell,max):
             cells = row.find_all('td')
             if (len(cells) > max and len(cells[name_cell].find_all('a'))>0):
                 if(len(cells[name_cell].find_all('b'))>0):
-                    name = cells[name_cell].find_all('b')[0].find('a')
+                    name_link = cells[name_cell].find_all('b')[0].find('a')
                 else:
-                    name = cells[name_cell].find_all('a')[0]
-                link = name.get('href')
+                    name_link = cells[name_cell].find_all('a')[0]
+
+                link = name_link.get('href')
+                name = name_link.text.strip()
+
+                if(len(name.split())>0 and (name.split()[0] in female_list)):
+                    gender = "Female"
+                else:
+                    gender = "Male"
+
                 if(start_cell!=end_cell):
                     start = get_date(cells[start_cell].text.strip())
                     end = get_date(cells[end_cell].text.strip())
                     period = start + " - " + end
                 else:
-                    period = cells[start_cell].text.strip()            
+                    period = cells[start_cell].text.strip()    
+
                 party = cells[party_cell].text.strip()
+
                 early_life,education,political_career,family = get_polotician_obj(link)
 
-                politician_obj = {
-                    "Name" : (unicodedata.normalize('NFKD', name.text).encode('ascii', 'ignore')).strip(),
-                    "Gender" : "Male",
+                name_si = translate_to_sinhala(name)
+                gender_si = translate_to_sinhala(gender)
+                period_si = translate_to_sinhala(period) 
+                political_party_si = translate_to_sinhala(party)
+                position_si = translate_to_sinhala(position)
+                early_life_en =  unicodedata.normalize('NFKD', early_life).encode('ascii', 'ignore')
+                early_life_si = translate_to_sinhala(early_life)
+                education_en = unicodedata.normalize('NFKD', education).encode('ascii', 'ignore')
+                education_si = translate_to_sinhala(education)
+                political_career_en = unicodedata.normalize('NFKD', political_career).encode('ascii', 'ignore')
+                political_career_si = translate_to_sinhala(political_career)
+                family_en = unicodedata.normalize('NFKD', family).encode('ascii', 'ignore')
+                family_si = translate_to_sinhala(family)
+
+                politician_en_obj = {
+                    "Name" : name,
+                    "Gender" : gender,
                     "Period": period,
                     "Political Party" : party,
                     "Position" : position,
-                    "Early Life" : unicodedata.normalize('NFKD', early_life).encode('ascii', 'ignore'),
-                    "Education" : unicodedata.normalize('NFKD', education).encode('ascii', 'ignore'),
-                    "Political Career" : unicodedata.normalize('NFKD', political_career).encode('ascii', 'ignore'),
-                    "Family" : unicodedata.normalize('NFKD', family).encode('ascii', 'ignore')
+                    "Early Life" : early_life_en,
+                    "Education" : education_en,
+                    "Political Career" : political_career_en,
+                    "Family" : family_en
                 }
 
-                politician.append(politician_obj)
+                politician_english.append(politician_en_obj)
 
                 politician_sinhala_obj = {
-                    "Name" : translate_to_sinhala(name.text.strip()),
-                    "Gender" : translate_to_sinhala("Male"),
-                    "Period" : translate_to_sinhala(period),
-                    "Political Party" :translate_to_sinhala(party),
-                    "Position" : translate_to_sinhala(position),
-                    "Early Life" : translate_to_sinhala(early_life),
-                    "Education" : translate_to_sinhala(education),
-                    "Political Career" : translate_to_sinhala(political_career),
-                    "Family" : translate_to_sinhala(family)
+                    "Name" : name_si,
+                    "Gender" : gender_si,
+                    "Period" : period_si,
+                    "Political Party" :political_party_si,
+                    "Position" : position_si,
+                    "Early Life" : early_life_si,
+                    "Education" : education_si,
+                    "Political Career" : political_career_si,
+                    "Family" : family_si
                 }
 
                 politician_sinhala.append(politician_sinhala_obj)
-                
-    return politician,politician_sinhala
+
+                politician_obj = {
+                    "Name_en" : name,
+                    "Name_si" : name_si,
+                    "Gender_en" : gender,
+                    "Gender_si" : gender_si,
+                    "Period_en" : period,
+                    "Period_si" : period_si,
+                    "Political_Party_en" : party,
+                    "Political_Party_si" :political_party_si,
+                    "Position_si" : position_si,
+                    "Early_Life" : early_life_si,
+                    "Education" : education_si,
+                    "Political_Career" : political_career_si,
+                    "Family" : family_si
+                }
+
+                politician_meta_data.append(politician_obj)
+
+    return politician_english,politician_sinhala,politician_meta_data
 
 

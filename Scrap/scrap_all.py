@@ -1,4 +1,5 @@
 import csv
+import json
 from scrap import get_all_data 
 
 #position:[link,name,start,end,party]
@@ -16,39 +17,57 @@ url_list = {"President":["https://en.wikipedia.org/wiki/List_of_presidents_of_Sr
 "Speaker of the Parliament" : ["https://en.wikipedia.org/wiki/Speaker_of_the_Parliament_of_Sri_Lanka",0,3,3,2,3]
 }
 
-politicians = []
-politicians_sinhala = []
-count = 0
 
-for key in url_list:
-    each = url_list[key]
-    print("Log : Feching "+key+" List")
-    out_eng, out_si = get_all_data(key,each[0],each[1],each[2],each[3],each[4],each[5])
-    politicians += out_eng
-    politicians_sinhala += out_si
-    count += len(out_eng)
+def get_politicians(url_list):
+    politicians = []
+    politicians_sinhala = []
+    politicians_meta_data = []
 
-# csv_columns = ['Name','Gender','Start Date', 'End Date', 'Political Party', 'Position', 'Early Life', 'Education', 'Political Career','Family']
-csv_columns = ['Name','Gender','Period', 'Political Party', 'Position', 'Early Life', 'Education', 'Political Career','Family']
-csv_file = "Corpus/politician_corpus_with_english_final.csv"
-try:
-    with open(csv_file, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-        writer.writeheader()
-        for politician in politicians:
-            writer.writerow(politician)
-except IOError:
-    print("I/O error")
+    count = 0
+
+    for key in url_list:
+        each = url_list[key]
+        print("Log : Feching "+key+" List")
+        out_eng, out_si, out_all = get_all_data(key,each[0],each[1],each[2],each[3],each[4],each[5])
+        politicians += out_eng
+        politicians_sinhala += out_si
+        politicians_meta_data += out_all
+        count += len(out_eng)
+    
+    print("Info : Total Number of Records " + str(count))
+
+    return politicians,politicians_sinhala,politicians_meta_data
+
+def create_en_csv(politicians):
+    csv_columns = ['Name','Gender','Period', 'Political Party', 'Position', 'Early Life', 'Education', 'Political Career','Family']
+    csv_file = "Corpus/politician_corpus_english.csv"
+    try:
+        with open(csv_file, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for politician in politicians:
+                writer.writerow(politician)
+    except IOError:
+        print("I/O error")
+
+def create_si_csv(politicians_sinhala):
+    csv_columns = ['Name','Gender','Period', 'Political Party', 'Position', 'Early Life', 'Education', 'Political Career','Family']
+    csv_file_sinhala = "Corpus/politician_corpus_sinhala.csv"
+    try:
+        with open(csv_file_sinhala, 'w', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for politician_sin in politicians_sinhala:
+                writer.writerow(politician_sin)
+    except IOError:
+        print("I/O error")
+
+def create_meta_data(politicians_meta_data):
+	with open ('Corpus/politician_corpus.json','w+') as f:
+		f.write(json.dumps(politicians_meta_data))
 
 
-csv_file_sinhala = "Corpus/politician_corpus_with_sinhala_final.csv"
-try:
-    with open(csv_file_sinhala, 'w', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-        writer.writeheader()
-        for politician_sin in politicians_sinhala:
-            writer.writerow(politician_sin)
-except IOError:
-    print("I/O error")
-
-print("Info : Total Number of Records " + str(count))
+politicians,politicians_sinhala,politicians_meta_data = get_politicians(url_list)
+create_en_csv(politicians)
+create_si_csv(politicians_sinhala)
+create_meta_data(politicians_meta_data)
