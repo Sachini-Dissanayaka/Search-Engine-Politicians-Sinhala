@@ -6,7 +6,11 @@ import json
 import unicodedata
 import re
 from googletrans import Translator
+from random import seed
+from random import randint
 
+def hasNumbers(inputString):
+    return any(char.isdigit() for char in inputString)
 
 def translate_to_sinhala(value):
     sinhala_val = value
@@ -130,17 +134,23 @@ def get_all_data(position,url,name_cell,start_cell,end_cell,party_cell,max):
                     gender = "Female"
                 else:
                     gender = "Male"
-
+                
+                range = []
                 if(start_cell!=end_cell):
                     start = get_date(cells[start_cell].text.strip())
                     end = get_date(cells[end_cell].text.strip())
                     period = start + " - " + end
                 else:
-                    period = cells[start_cell].text.strip()    
+                    period = cells[start_cell].text.strip()
+
+                range = [int(i) for i in period.split() if (i.isdigit() and len(i)==4)]    
 
                 party = cells[party_cell].text.strip()
 
                 early_life,education,political_career,family = get_polotician_obj(link)
+
+                seed(link)
+                rate = randint(5,10)
 
                 name_si = translate_to_sinhala(name)
                 gender_si = translate_to_sinhala(gender)
@@ -185,14 +195,18 @@ def get_all_data(position,url,name_cell,start_cell,end_cell,party_cell,max):
                 politician_sinhala.append(politician_sinhala_obj)
 
                 politician_obj = {
+                    "Identity" : link,
                     "Name_en" : name,
                     "Name_si" : name_si,
+                    "Rate" : rate,
                     "Gender_en" : gender,
                     "Gender_si" : gender_si,
                     "Period_en" : period,
                     "Period_si" : period_si,
+                    "Range" : range,
                     "Political_Party_en" : party,
                     "Political_Party_si" :political_party_si,
+                    "Position_en" : position,
                     "Position_si" : position_si,
                     "Early_Life" : early_life_si,
                     "Education" : education_si,
