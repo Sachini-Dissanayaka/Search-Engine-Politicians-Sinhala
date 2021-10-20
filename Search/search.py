@@ -1,5 +1,9 @@
 import json
 import requests
+from googletrans import Translator
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 name_key_words = ["ගෙ"]
 female_key_words = ["ගැහැණු", "කාන්තා", "කාන්තාව", "ස්ත්‍රී", "ගැහැණිය", "කාන්තාවන්"]
@@ -41,6 +45,10 @@ aggs =      {
                 }
                 }
             }
+def translate_to_english(value):
+    translator = Translator()
+    english_term = translator.translate(value, dest='en')
+    return english_term.text
 
 def generate_query(term, size,sort):
     if (sort):
@@ -67,7 +75,7 @@ def generate_query(term, size,sort):
     return query
 
 
-def generate_query_with_keywords(mustObj,shouldobj,shouldmin,term, size,sort): 
+def generate_query_with_keywords(mustObj,shouldobj,shouldmin,size,sort): 
     if (sort):  
         query = {
             "size": size,
@@ -75,14 +83,7 @@ def generate_query_with_keywords(mustObj,shouldobj,shouldmin,term, size,sort):
             "aggs": aggs,
             "query": {
                 "bool": {
-                    "must": [
-                        {
-                        "query_string": {
-                            "query": term
-                        }
-                        }
-                    ],
-                    "filter":mustObj,
+                    "must": mustObj,
                     "should":shouldobj,
                     "minimum_should_match" :shouldmin
                     }
@@ -94,20 +95,72 @@ def generate_query_with_keywords(mustObj,shouldobj,shouldmin,term, size,sort):
         "aggs": aggs,
         "query": {
             "bool": {
-                "must": [
-                    {
-                    "query_string": {
-                        "query": term
-                    }
-                    }
-                ],
-                "filter":mustObj,
+                "must": mustObj,
                 "should":shouldobj,
                 "minimum_should_match" :shouldmin
                 }
             }
         }
 
+    return query
+
+
+def top_most_text(search_term):
+
+    term_en = translate_to_english(search_term)
+
+    with open('Corpus/politician_meta_data_corpus.json') as f:
+        meta_data = json.loads(f.read())
+
+    name_list_en = meta_data["Name_en"]
+    position_list_en = meta_data["Position_en"]
+    party_list_en = meta_data["Political_Party_en"]
+
+    documents_name = [term_en]
+    documents_name.extend(name_list_en)
+    documents_position = [term_en]
+    documents_position.extend(position_list_en)
+    documents_party = [term_en]
+    documents_party.extend(party_list_en)
+
+    query = []
+
+    #name 
+    tfidf_vectorizer = TfidfVectorizer(analyzer="char", token_pattern=u'(?u)\\b\w+\\b')
+    tfidf_matrix = tfidf_vectorizer.fit_transform(documents_name)
+    cs = cosine_similarity(tfidf_matrix[0:1],tfidf_matrix)
+    similarity_list = cs[0][1:]
+    max_val = max(similarity_list)
+
+    if max_val >  0.85 :
+        loc = np.where(similarity_list==max_val)
+        i = loc[0][0]
+        query.append({"match" : {"Name_en": name_list_en[i]}})
+    
+    #position
+    tfidf_vectorizer = TfidfVectorizer(analyzer="char", token_pattern=u'(?u)\\b\w+\\b')
+    tfidf_matrix = tfidf_vectorizer.fit_transform(documents_position)
+    cs = cosine_similarity(tfidf_matrix[0:1],tfidf_matrix)
+    similarity_list = cs[0][1:]
+    max_val = max(similarity_list)
+
+    if max_val >  0.85 :
+        loc = np.where(similarity_list==max_val)
+        i = loc[0][0]
+        query.append({"match" : {"Position_en": position_list_en[i]}})
+    
+    #political party
+    tfidf_vectorizer = TfidfVectorizer(analyzer="char", token_pattern=u'(?u)\\b\w+\\b')
+    tfidf_matrix = tfidf_vectorizer.fit_transform(documents_party)
+    cs = cosine_similarity(tfidf_matrix[0:1],tfidf_matrix)
+    similarity_list = cs[0][1:]
+    max_val = max(similarity_list)
+
+    if max_val >  0.85 :
+        loc = np.where(similarity_list==max_val)
+        i = loc[0][0]
+        query.append({"match" : {"Political_Party_en": party_list_en[i]}})
+    
     return query
 
 
@@ -169,6 +222,7 @@ def detect_keywords(term):
         else:
             text += word + " "
 
+    print(text)
     text_cleaned = ""
     text_splited = text.split()
     for word in text_splited:
@@ -176,6 +230,12 @@ def detect_keywords(term):
             text_cleaned += word + " "
     text_cleaned = text_cleaned.strip()
     text_cleaned = (''.join([i for i in text_cleaned if not i.isdigit()])).strip()
+
+    if(len(text_cleaned)>0):
+        top_must = top_most_text(text_cleaned)
+        if(len(top_must)>0):
+            mustobj += top_must
+            text_cleaned="" 
     
     shouldobj = []
     if(len(text_cleaned)>0 and len(mustobj) > 0):
@@ -188,7 +248,6 @@ def detect_keywords(term):
   
     return mustobj,shouldobj
 
-# {"match" : {"Early_Life" : text_cleaned}},{"match" : {"Education" : text_cleaned}},{"match" : {"Political_Career" : text_cleaned}},{"match" : {"Family" : text_cleaned}}
 
 def perfom_query(query, host):
     URL = "http://" + str(host) + ":9200/index-politicians/_search"
@@ -266,9 +325,9 @@ def search(term, host):
                         
         if (len(mustObj) > 0):
             if(len(shouldobj)>0):
-                query = generate_query_with_keywords(mustObj, shouldobj,1, term, size,sort)
+                query = generate_query_with_keywords(mustObj, shouldobj,1, size,sort)
             else:
-                query = generate_query_with_keywords(mustObj, shouldobj,0, term, size,sort)
+                query = generate_query_with_keywords(mustObj, shouldobj,0, size,sort)
         else:
             query = generate_query(term, size,sort)
 

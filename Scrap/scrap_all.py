@@ -7,7 +7,7 @@ url_list = {"President":["https://en.wikipedia.org/wiki/List_of_presidents_of_Sr
 "Prime Minister":["https://en.wikipedia.org/wiki/List_of_prime_ministers_of_Sri_Lanka",3,4,5,7,7],
 "Minister of Health":["https://en.wikipedia.org/wiki/Ministry_of_Health,_Nutrition_and_Indigenous_Medicine#Ministers",1,4,5,3,5],
 "Opposition Leader":["https://en.wikipedia.org/wiki/Leader_of_the_Opposition_(Sri_Lanka)",1,2,3,5,5],
-"Minister of Defence":["https://en.wikipedia.org/wiki/Minister_of_Defence_(Sri_Lanka)",2,3,4,5,6],
+"Minister of Defence":["https://en.wikipedia.org/wiki/Minister_of_Defence_(Sri_Lanka)",2,3,4,6,6],
 "Minister of Education" :["https://en.wikipedia.org/wiki/Minister_of_Education_(Sri_Lanka)",1,4,4,3,4],
 "Minister of Finance" : ["https://en.wikipedia.org/wiki/Minister_of_Finance_(Sri_Lanka)",1,4,4,3,4],
 "Minister of Sports" : ["https://en.wikipedia.org/wiki/Ministry_of_Sports_(Sri_Lanka)#List_of_Sports_Ministers",1,4,4,3,4],
@@ -38,6 +38,7 @@ def get_politicians(url_list):
 
     return politicians,politicians_sinhala,politicians_meta_data
 
+
 def create_en_csv(politicians):
     csv_columns = ['Name','Gender','Period', 'Political Party', 'Position', 'Early Life', 'Education', 'Political Career','Family']
     csv_file = "Corpus/politician_corpus_english.csv"
@@ -49,6 +50,7 @@ def create_en_csv(politicians):
                 writer.writerow(politician)
     except IOError:
         print("I/O error")
+
 
 def create_si_csv(politicians_sinhala):
     csv_columns = ['Name','Gender','Period', 'Political Party', 'Position', 'Early Life', 'Education', 'Political Career','Family']
@@ -62,12 +64,38 @@ def create_si_csv(politicians_sinhala):
     except IOError:
         print("I/O error")
 
+
 def create_meta_data(politicians_meta_data):
 	with open ('Corpus/politician_corpus.json','w+') as f:
 		f.write(json.dumps(politicians_meta_data))
+
+
+def create_meta_all():
+    dict_all_meta = {}
+    list_keys = ['Name_en', 'Name_si', 'Gender_en', 'Gender_si', 'Political_Party_en', 'Political_Party_si', 'Position_en', 'Position_si']
+    for i in list_keys :
+        dict_all_meta[i] = []
+    
+    with open('Corpus/politician_corpus.json') as f:
+        data = json.loads(f.read())
+    
+    for items in data:
+        for key in items:
+            if key in list_keys:
+                if type(items[key]) == list:
+                    for val in items[key]:
+                        if val not in dict_all_meta[key]:
+                            dict_all_meta[key].append(val)
+                else :
+                    if items[key] not in dict_all_meta[key]:
+                        dict_all_meta[key].append(items[key])
+	
+    with open ('Corpus/politician_meta_data_corpus.json','w+') as f:
+        f.write(json.dumps(dict_all_meta))
 
 
 politicians,politicians_sinhala,politicians_meta_data = get_politicians(url_list)
 create_en_csv(politicians)
 create_si_csv(politicians_sinhala)
 create_meta_data(politicians_meta_data)
+create_meta_all()

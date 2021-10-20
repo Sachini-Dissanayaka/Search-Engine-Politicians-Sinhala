@@ -1,9 +1,11 @@
 from flask import Flask
 from flask import request
+from flask_cors import CORS
 
 from search import search
 
 app = Flask(__name__)
+CORS(app)
 host = "127.0.0.1"
 
 @app.route('/hello/', methods=['GET', 'POST'])
