@@ -95,3 +95,5 @@ For indexing the dataset I used the standard analyzer. Since there is no issue w
 * Resistant to simple spelling errors
     * The search engine servers misspelled queries using Fuzziness. 
 
+![Search process](Rule_Based_Search.png)
+
