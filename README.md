@@ -11,7 +11,7 @@ The important files and directories of the repository is shown below
         ├── politician_corpus_sinhala.csv : translated data scraped form the website in Sinhala
         ├── politician_meta_data_corpus.json : contain all meta date related to the politicians
         └── politician_corpus.json : contain the final politician set
-    ├── Frontend : UI related files 
+    ├── Frontend : React frontend
     ├── Scrap : Source codes for the data scraper
         ├── scrap.py : Source code for web scrapper and translator
         └── scrap_all.py : Source code to create corpus, Contain all the urls
