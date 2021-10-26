@@ -9,7 +9,7 @@ name_key_words = ["ගෙ"]
 female_key_words = ["ගැහැණු", "කාන්තා", "කාන්තාව", "ස්ත්‍රී", "ගැහැණිය", "කාන්තාවන්"]
 male_key_words = ["පිරිමි", "පුරුෂ"]
 gender_key_words = ["ගැහැණු", "කාන්තා", "කාන්තාව", "ස්ත්‍රී", "පිරිමි", "පුරුෂ", "ගැහැණිය", "කාන්තාවන්"]
-period_key_words = ["දී", "සිට"]
+period_key_words = ["දී", "සිට","දක්වා","තෙක්"]
 party_key_words = ["පක්ෂය", "පක්ෂ", "යේ", "පෙරමුණේ", "සංධානයේ", "පක්ෂයේ", "පෙරමුණ", "සංධානය"]
 position_key_words = ["ජනාධිපති", "ජනාධිපතිවරයා" , "ජනාධිපතිවරු", "සභාපති", "අගමැති", "අගමැතිවරයා" , "අගමැතිවරු","මන්ත්‍රී", "අමාත්ය", "ඇමති", "ඇමතිවරු", "විපක්ෂ" "නායක", "කථානායක"]
 
@@ -57,7 +57,8 @@ def generate_query(term, size,sort):
             "sort": [{"Rate": {"order": "desc"}}],
             "query":{
                 "query_string":{
-                    "query": term
+                    "query": term,
+                    "fuzziness": "AUTO"
                     }
                     },
                     "aggs" : aggs
@@ -67,7 +68,8 @@ def generate_query(term, size,sort):
             "size" : size,
             "query":{
                 "query_string":{
-                    "query": term
+                    "query": term,
+                    "fuzziness": "AUTO"
                     }
                     },
                     "aggs" : aggs
@@ -109,7 +111,7 @@ def top_most_text(search_term):
 
     term_en = translate_to_english(search_term)
 
-    with open('Corpus/politician_meta_data_corpus.json') as f:
+    with open('F:/2 - Aca semester 7/Data Mining & Information Retrieval/IR/IR Project/Search-Engine-Politicians-Sinhala/Corpus/politician_meta_data_corpus.json') as f:
         meta_data = json.loads(f.read())
 
     name_list_en = meta_data["Name_en"]
@@ -173,7 +175,7 @@ def detect_keywords(term):
         print(word)
         if word  in name_key_words:
             name = words[i-2] + " "+ words[i-1]
-            matchObjName = {"match" : {"Name_si" : name}}
+            matchObjName = {"match" : {"Name_si" : {"query": name,"fuzziness": "AUTO"}}}
             mustobj.append(matchObjName)
 
         elif word in male_key_words:
@@ -190,21 +192,21 @@ def detect_keywords(term):
             if (word == "සිට" and (words[i+2]=="දක්වා" or words[i+2]=="තෙක්") and words[i-1].isdigit() and words[i+1].isdigit()):
                 period1 = int(words[i-1])
                 period2 = int(words[i+1])
-            
-            if(period1!=0 or period2!=0):
                 period_list = list(range(period1,period2+1))
                 matchObjPeriod = {"match" : {"Period_si" : " ".join(map(str,period_list))}}
-            else:
+                mustobj.append(matchObjPeriod)
+                
+            elif(period1==0 and period2==0 and words[i-1].isdigit()):
                 period = words[i-1]
                 matchObjPeriod = {"match" : {"Period_si" : period}}
-            mustobj.append(matchObjPeriod)
+                mustobj.append(matchObjPeriod)
 
         elif word  in party_key_words:
             if(word == "යේ"):
                 party = words[i-2] + " " + words[i-1]
             else:
                 party = words[i-2] + " " + words[i-1]
-            matchObjParty = {"match" : {"Political_Party_si" : party}}
+            matchObjParty = {"match" : {"Political_Party_si" :{"query": party,"fuzziness": "AUTO"}}}
             mustobj.append(matchObjParty)
         
         elif word  in position_key_words:
@@ -216,7 +218,7 @@ def detect_keywords(term):
                 position = "අගමැති"
             else:
                 position = word
-            matchObjPosition = {"match" : {"Position_si" : position}}
+            matchObjPosition = {"match" : {"Position_si" : {"query": position,"fuzziness": "AUTO"}}}
             mustobj.append(matchObjPosition)
 
         else:
@@ -314,8 +316,9 @@ def search(term, host):
 
         sort,  resultword = intent_classifier(term)
         print(resultword)
-        size = get_number(words)
-        if(size>0):
+        
+        if(hasNumbers(term)):
+            size = get_number(words)
             search_term = " ".join([word for word in resultword.split() if word!=str(size)])
         else:
             size = 20
