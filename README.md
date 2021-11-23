@@ -11,7 +11,7 @@ The important files and directories of the repository is shown below
         ├── politician_corpus_sinhala.csv : translated data scraped form the website in Sinhala
         ├── politician_meta_data_corpus.json : contain all meta date related to the politicians
         └── politician_corpus.json : contain the final politician set
-    ├── Frontend : UI related files 
+    ├── Frontend : React frontend
     ├── Scrap : Source codes for the data scraper
         ├── scrap.py : Source code for web scrapper and translator
         └── scrap_all.py : Source code to create corpus, Contain all the urls
@@ -94,4 +94,7 @@ For indexing the dataset I used the standard analyzer. Since there is no issue w
     * The search engine also support synonyms in Sinhala. As an example “කාන්තා අගමැතිවරු” will return all the female prime ministers even though the politician data does not have the word “කාන්තා” in the gender field or any of its fields
 * Resistant to simple spelling errors
     * The search engine servers misspelled queries using Fuzziness. 
+
+![Search process](Rule_Based_Search.png)
+
 
