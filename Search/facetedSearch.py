@@ -1,7 +1,7 @@
 import json
 import requests
 
-from search import intent_classifier, get_number
+from search import intent_classifier, get_number, hasNumbers, detect_keywords
 
 def facetedSearch(data, host):
     
@@ -9,12 +9,14 @@ def facetedSearch(data, host):
     words = term.split()
     sort,  resultword = intent_classifier(term)
     print(resultword)
-    size = get_number(words)
-    if(size>0):
-        search_term = " ".join([word for word in resultword.split() if word!=str(size)])
+    if(hasNumbers(term)):
+            size = get_number(words)
+            search_term = " ".join([word for word in resultword.split() if word!=str(size)])
     else:
         size = 20
         search_term = resultword
+
+    mustObj, shouldobj = detect_keywords(search_term)
     
     if(sort):
         sort_method = [{"Rate": {"order": "desc"}}]
@@ -29,19 +31,22 @@ def facetedSearch(data, host):
         }
 
         filter.append(matchObj)
+
     query = {
         "size" : size,
         "sort" : sort_method,
         "query": {
             "bool": {
-            "must": [
-                {
-                "query_string": {
-                    "query": search_term,
-                    "fuzziness": "AUTO"
-                }
-                }
-            ],
+                "must": mustObj,
+                "should":shouldobj,
+            # "must": [
+            #     {
+            #     "query_string": {
+            #         "query": search_term,
+            #         "fuzziness": "AUTO"
+            #     }
+            #     }
+            # ],
             "filter": filter
             }
         },

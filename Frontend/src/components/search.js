@@ -1,5 +1,5 @@
-import React , {useState} from "react";
-import { Input , Accordion , Dropdown , Icon} from "semantic-ui-react";
+import React, { useState } from "react";
+import { Input, Accordion, Dropdown, Icon } from "semantic-ui-react";
 
 const genderOptions = [
   {
@@ -45,7 +45,6 @@ const partyOptions = [
     text: "ස්වාධීන පක්ෂය",
     value: "ස්වාධීන",
   },
-
 ];
 
 const positionOptions = [
@@ -86,11 +85,18 @@ const positionOptions = [
   },
 ];
 
-const Search = ({ loading, onSearch, handlegenderchange, handlepartychange, handlepositionchange }) => {
+const Search = ({
+  loading,
+  onSearch,
+  handlegenderchange,
+  handlepartychange,
+  handlepositionchange,
+}) => {
   const [activeIndex, setActiveIndex] = useState(-1);
   const onKeyPress = (e) => {
     if (e.charCode === 13) onSearch(e.target.value);
   };
+
   const handleValueChange = (e, val) => {
     console.log(val.value);
   };
@@ -101,7 +107,7 @@ const Search = ({ loading, onSearch, handlegenderchange, handlepartychange, hand
   };
 
   return (
-    <div style={{ margin: "1rem", width: "300px" }}>
+    <div style={{ margin: "1rem", width: "600px" }}>
       <Input
         icon="search"
         placeholder="Search"

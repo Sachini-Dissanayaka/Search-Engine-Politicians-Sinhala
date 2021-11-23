@@ -10,8 +10,8 @@ female_key_words = ["ගැහැණු", "කාන්තා", "කාන්ත
 male_key_words = ["පිරිමි", "පුරුෂ"]
 gender_key_words = ["ගැහැණු", "කාන්තා", "කාන්තාව", "ස්ත්‍රී", "පිරිමි", "පුරුෂ", "ගැහැණිය", "කාන්තාවන්"]
 period_key_words = ["දී", "සිට","දක්වා","තෙක්"]
-party_key_words = ["පක්ෂය", "පක්ෂ", "යේ", "පෙරමුණේ", "සංධානයේ", "පක්ෂයේ", "පෙරමුණ", "සංධානය"]
-position_key_words = ["ජනාධිපති", "ජනාධිපතිවරයා" , "ජනාධිපතිවරු", "සභාපති", "අගමැති", "අගමැතිවරයා" , "අගමැතිවරු","මන්ත්‍රී", "අමාත්ය", "ඇමති", "ඇමතිවරු", "විපක්ෂ" "නායක", "කථානායක"]
+party_key_words = ["පක්ෂය", "පක්ෂ", "යේ", "පෙරමුණේ", "සංධානයේ", "පක්ෂයේ", "පෙරමුණ", "සංධානය","රජය"]
+position_key_words = ["ජනාධිපති", "ජනාධිපතිවරයා" , "ජනාධිපතිවරු", "සභාපති", "අගමැති", "අගමැතිවරයා" , "අගමැතිවරු","මන්ත්‍රී", "අමාත්ය", "ඇමති", "ඇමතිවරු", "විපක්ෂ" "නායක", "කථානායක","අමාත්‍ය"]
 
 aggs =      {
                 "Name filter": {
@@ -50,50 +50,26 @@ def translate_to_english(value):
     english_term = translator.translate(value, dest='en')
     return english_term.text
 
-def generate_query(term, size,sort):
-    if (sort):
-        query = {
-            "size" : size,
-            "sort": [{"Rate": {"order": "desc"}}],
-            "query":{
-                "query_string":{
-                    "query": term,
-                    "fuzziness": "AUTO"
-                    }
-                    },
-                    "aggs" : aggs
-                    }
-    else:
-        query = {
-            "size" : size,
-            "query":{
-                "query_string":{
-                    "query": term,
-                    "fuzziness": "AUTO"
-                    }
-                    },
-                    "aggs" : aggs
-                    }
+def generate_query(term, size,sort_method):
+    query = {
+        "size" : size,
+        "sort": sort_method,
+        "query":{
+            "query_string":{
+                "query": term,
+                "fuzziness": "AUTO"
+                }
+            },
+        "aggs" : aggs
+        }
+
     return query
 
 
-def generate_query_with_keywords(mustObj,shouldobj,shouldmin,size,sort): 
-    if (sort):  
-        query = {
-            "size": size,
-            "sort": [{"Rate": {"order": "desc"}}],
-            "aggs": aggs,
-            "query": {
-                "bool": {
-                    "must": mustObj,
-                    "should":shouldobj,
-                    "minimum_should_match" :shouldmin
-                    }
-                }
-            }
-    else:
-        query = {
+def generate_query_with_keywords(mustObj,shouldobj,shouldmin,size,sort_method): 
+    query = {
         "size": size,
+        "sort": sort_method,
         "aggs": aggs,
         "query": {
             "bool": {
@@ -103,7 +79,6 @@ def generate_query_with_keywords(mustObj,shouldobj,shouldmin,size,sort):
                 }
             }
         }
-
     return query
 
 
@@ -212,7 +187,7 @@ def detect_keywords(term):
         elif word  in position_key_words:
             if word in ["ජනාධිපති", "ජනාධිපතිවරයා" , "ජනාධිපතිවරු", "සභාපති"]:
                 position = "සභාපති"
-            elif word in ["ඇමති", "ඇමතිවරු", "මන්ත්‍රී","අමාත්ය"]:
+            elif word in ["ඇමති", "ඇමතිවරු", "මන්ත්‍රී","අමාත්ය","අමාත්‍ය"]:
                 position = words[i-1] 
             elif word in ["අගමැති", "අගමැතිවරයා","අගමැතිවරු"]:
                 position = "අගමැති"
@@ -284,7 +259,7 @@ def hasNumbers(inputString):
 
 
 def get_number(term):
-    size = 0
+    size = 20
     number = [int(i) for i in term if (i.isdigit() and len(i)<3)]
     if(len(number)>0):
         size = number[0]
@@ -325,14 +300,19 @@ def search(term, host):
             search_term = resultword
         
         mustObj, shouldobj = detect_keywords(search_term)
+
+        if(sort):
+            sort_method = [{"Rate": {"order": "desc"}}]
+        else:
+            sort_method = [{"_score": {"order": "desc"}}]
                         
         if (len(mustObj) > 0):
             if(len(shouldobj)>0):
-                query = generate_query_with_keywords(mustObj, shouldobj,1, size,sort)
+                query = generate_query_with_keywords(mustObj, shouldobj,1, size,sort_method)
             else:
-                query = generate_query_with_keywords(mustObj, shouldobj,0, size,sort)
+                query = generate_query_with_keywords(mustObj, shouldobj,0, size,sort_method)
         else:
-            query = generate_query(term, size,sort)
+            query = generate_query(term, size,sort_method)
 
        
     else:
