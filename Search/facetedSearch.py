@@ -39,14 +39,6 @@ def facetedSearch(data, host):
             "bool": {
                 "must": mustObj,
                 "should":shouldobj,
-            # "must": [
-            #     {
-            #     "query_string": {
-            #         "query": search_term,
-            #         "fuzziness": "AUTO"
-            #     }
-            #     }
-            # ],
             "filter": filter
             }
         },
